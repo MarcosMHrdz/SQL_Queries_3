@@ -23,31 +23,34 @@ ORDER BY length DESC
 LIMIT 10;
 
 -- ¿Cuántos días lleva funcionando la empresa (utilizando la función DATEDIFF())?
-
-SELECT DATEDIFF(NOW(), 'fecha_de_inicio_empresa') AS dias_funcionamiento_empresa;
+SELECT DATEDIFF(MAX(rental_date), MIN(rental_date)) AS operating_days
+FROM rental;
 
 -- Muestra información de alquiler con columnas adicionales mes y día laborable. Consigue 20.
 
 SELECT *,
-    MONTH(rental_date) AS mes,
-    CASE
-        WHEN WEEKDAY(rental_date) < 5 THEN 'día laborable'
-        ELSE 'fin de semana'
-    END AS day_type
+	MONTH(rental_date) AS rental_month,
+       DAYOFWEEK(rental_date) AS rental_weekday
 FROM rental
 LIMIT 20;
 
 -- Agregue una columna adicional day_type con los valores 'fin de semana' y 'día laboral' según el día de alquiler de la semana.
 
-ALTER TABLE rental
-ADD COLUMN day_type ENUM('fin de semana', 'día laboral');
-UPDATE rental
-SET day_type = CASE
-    WHEN WEEKDAY(rental_date) < 5 THEN 'día laborable' 
-    ELSE 'fin de semana' 
-END;
--- ¿Cuántos alquileres hubo en el último mes de actividad?
+SELECT *,
+       CASE 
+           WHEN DAYOFWEEK(rental_date) IN (1, 7) THEN 'weekend'
+           ELSE 'workday'
+       END AS day_type
+FROM rental;
 
-SELECT COUNT(*) AS num_alquileres_ultimo_mes
-FROM rental
-WHERE rental_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH);
+-- ¿Cuántos alquileres hubo en el último mes de actividad?
+   
+SELECT
+ date_format(rental_date, "%Y %m") as fecha_de_aqluiler, COUNT(rental_id)
+ FROM rental
+ GROUP BY date_format(rental_date, "%Y %m")
+ ORDER BY date_format(rental_date, "%Y %m") DESC
+ LIMIT 1;
+
+
+
